@@ -12,7 +12,7 @@ const INDIAN_STATES = [
 const Register = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', phone: '', state: '', district: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', phone: '', state: '', district: '', landArea: '1', password: '', confirm: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -45,18 +45,37 @@ const Register = () => {
       const res = await fetch(API.register, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, phone: form.phone, state: form.state, district: form.district, password: form.password }),
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          state: form.state,
+          location: form.district,
+          land_area_acres: parseFloat(form.landArea) || 1.0,
+          password: form.password
+        }),
       });
-      if (!res.ok) throw new Error('API error');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || 'Registration failed');
+      }
       const data = await res.json();
-      login({ name: form.name, phone: form.phone, state: form.state, district: form.district, token: data.token || 'api-token' });
+      login({
+        name: form.name,
+        phone: form.phone,
+        state: form.state,
+        location: form.district,
+        land_area_acres: parseFloat(form.landArea) || 1.0,
+        token: data.access_token
+      });
       toast.success(`Welcome to AgriPredict AI, ${form.name.split(' ')[0]}!`);
       navigate('/soil-details');
-    } catch {
-      // Demo mode fallback
-      login({ name: form.name, phone: form.phone, state: form.state, district: form.district, token: 'demo-token-123' });
-      toast.success(`Welcome to AgriPredict AI, ${form.name.split(' ')[0]}!`);
-      navigate('/soil-details');
+    } catch (err: any) {
+      if (err.message?.includes('already registered')) {
+        toast.error('Phone number already registered. Please login.');
+        navigate('/login');
+      } else {
+        toast.error(err.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -139,6 +158,13 @@ const Register = () => {
                 <input type="text" placeholder="e.g. Mysuru" value={form.district} onChange={e => update('district', e.target.value)}
                   className="w-full rounded-button border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-shadow" />
               </div>
+            </div>
+
+            {/* Land Area */}
+            <div>
+              <label className="text-sm font-medium text-gray-600 block mb-1.5">Land Area (acres)</label>
+              <input type="number" step="0.5" min="0.5" placeholder="e.g. 2.5" value={form.landArea} onChange={e => update('landArea', e.target.value)}
+                className="w-full rounded-button border border-border bg-card px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-shadow" />
             </div>
 
             {/* Password */}
