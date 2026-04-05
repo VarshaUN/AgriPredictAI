@@ -21,11 +21,11 @@ const MOCK_DISEASE = {
   fertilizers: ["Apply Potassium (K) based fertilizers", "Avoid excess Nitrogen (N) during active blast phases"]
 };
 
-const MOCK_HEALTHY = { 
-  disease: null, 
-  confidence: 95, 
-  severity: null, 
-  crop: "Rice", 
+const MOCK_HEALTHY = {
+  disease: null,
+  confidence: 95,
+  severity: null,
+  crop: "Rice",
   description: "No disease patterns detected.",
   pesticides: [],
   fertilizers: ["Standard Nitrogen (N) application", "Zinc Sulfate if soil is deficient"]
@@ -39,7 +39,7 @@ const severityColors = {
 };
 
 const DiseaseDetection = () => {
-  const { isDemoMode } = useAuth();
+  const { isDemoMode, user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -66,7 +66,13 @@ const DiseaseDetection = () => {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('crop', 'Auto-detect');
-      const res = await fetch(API.detectDisease, { method: 'POST', body: fd });
+      const res = await fetch(API.detectDisease, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'Authorization': `Bearer ${user?.token}`
+        }
+      });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResult(data);
@@ -103,12 +109,11 @@ const DiseaseDetection = () => {
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
                 onClick={() => !file && fileRef.current?.click()}
-                className={`relative rounded-3xl border-2 border-dashed transition-all cursor-pointer overflow-hidden lg:min-h-[320px] min-h-[260px] ${
-                  dragging ? 'border-primary bg-green-50 scale-[1.02]' : file ? 'border-primary/30 bg-gray-50' : 'border-green-200 bg-gray-50 hover:border-primary/50'
-                }`}
+                className={`relative rounded-3xl border-2 border-dashed transition-all cursor-pointer overflow-hidden lg:min-h-[320px] min-h-[260px] ${dragging ? 'border-primary bg-green-50 scale-[1.02]' : file ? 'border-primary/30 bg-gray-50' : 'border-green-200 bg-gray-50 hover:border-primary/50'
+                  }`}
               >
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-                
+
                 {!file ? (
                   <div className="flex flex-col items-center justify-center min-h-[320px] gap-6 p-8">
                     <div className="flex gap-4">
@@ -172,7 +177,7 @@ const DiseaseDetection = () => {
                       <span className="text-xs font-bold text-primary">{result.confidence}% Confidence</span>
                     </div>
                   </div>
-                  
+
                   <h2 className="text-3xl font-bold mb-2">{result.disease}</h2>
                   <p className="text-sm text-gray-400 italic mb-8 font-medium">Magnaporthe oryzae</p>
 
@@ -192,7 +197,7 @@ const DiseaseDetection = () => {
                       <ul className="space-y-3">
                         {((result as any).pesticides || []).map((t: string, i: number) => (
                           <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                             <span className="h-1.5 w-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
                             {t}
                           </li>
                         ))}
@@ -201,7 +206,7 @@ const DiseaseDetection = () => {
                     <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-100">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                           <Sprout className="h-4 w-4 text-emerald-600" />
+                          <Sprout className="h-4 w-4 text-emerald-600" />
                         </div>
                         <h4 className="font-bold text-gray-900 uppercase text-xs tracking-widest">Growth Fertilizers</h4>
                       </div>
