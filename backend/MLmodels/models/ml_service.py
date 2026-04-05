@@ -27,9 +27,9 @@ yield_encoders = joblib.load(os.path.join(MODEL_DIR, 'yield_lstm_encoders.pkl'))
 def predict_crop(N: float, P: float, K: float, temperature: float, humidity: float, ph: float, rainfall: float):
     """Feature 2: Crop Recommendation"""
     input_data = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
-    scaled = crop_scaler.transform(input_data)
-    pred_encoded = crop_model.predict(scaled)[0]
-    crop_name = crop_encoder.inverse_transform([pred_encoded])[0]
+    crop_enc = yield_encoders['Crop'].transform([crop.capitalize()])[0]
+    season_enc = yield_encoders['Season'].transform([season.capitalize()])[0]
+    state_enc = yield_encoders['State'].transform([state.capitalize()])[0]
     return {"recommended_crop": crop_name, "confidence": "High (99%)"}
 
 def predict_disease(image_bytes: bytes):
