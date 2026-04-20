@@ -34,10 +34,10 @@ def predict_crop(N: float, P: float, K: float, temperature: float, humidity: flo
 
 def predict_disease(image_bytes: bytes):
     """Feature 1: Disease Detection"""
-    img = Image.open(io.BytesIO(image_bytes)).convert('RGB').resize((128, 128))
-    img_array = np.array(img) / 255.0
+    img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+    img = img.resize((128, 128)) 
+    img_array = np.array(img, dtype=np.float32)
     img_array = np.expand_dims(img_array, axis=0)
-
     pred = disease_model.predict(img_array)[0]
     class_idx = np.argmax(pred)
     disease_name = disease_classes[class_idx]
