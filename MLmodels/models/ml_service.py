@@ -69,7 +69,7 @@ def calculate_profit(predicted_yield: float, crop: str, msp_price: float = 2300)
 def get_disease_treatment_advice(disease_name: str):
     """Pesticide and Fertilizer"""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash-lite')
 
         prompt = f"""
         An agricultural AI has just diagnosed a crop with the following disease: {disease_name}.

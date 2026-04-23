@@ -27,17 +27,17 @@ yield_encoders = joblib.load(os.path.join(MODEL_DIR, 'yield_lstm_encoders.pkl'))
 def predict_crop(N: float, P: float, K: float, temperature: float, humidity: float, ph: float, rainfall: float):
     """Feature 2: Crop Recommendation"""
     input_data = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
-    crop_enc = yield_encoders['Crop'].transform([crop.capitalize()])[0]
-    season_enc = yield_encoders['Season'].transform([season.capitalize()])[0]
-    state_enc = yield_encoders['State'].transform([state.capitalize()])[0]
+    scaled = crop_scaler.transform(input_data)
+    pred_encoded = crop_model.predict(scaled)[0]
+    crop_name = crop_encoder.inverse_transform([pred_encoded])[0]
     return {"recommended_crop": crop_name, "confidence": "High (99%)"}
 
 def predict_disease(image_bytes: bytes):
     """Feature 1: Disease Detection"""
-    img = Image.open(io.BytesIO(image_bytes)).convert('RGB').resize((128, 128))
-    img_array = np.array(img) / 255.0
+    img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+    img = img.resize((128, 128)) 
+    img_array = np.array(img, dtype=np.float32)
     img_array = np.expand_dims(img_array, axis=0)
-
     pred = disease_model.predict(img_array)[0]
     class_idx = np.argmax(pred)
     disease_name = disease_classes[class_idx]
