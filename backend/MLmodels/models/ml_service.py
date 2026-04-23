@@ -4,12 +4,15 @@ from tensorflow.keras.models import load_model
 import json
 from PIL import Image
 import io
-import google.generativeai as genai
+import os
+from groq import Groq
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = Groq(
+    api_key=os.environ.get("GROQ_API_KEY"),
+)
 
 import os
 MODEL_DIR = os.path.join(os.path.dirname(__file__))
@@ -67,10 +70,8 @@ def calculate_profit(predicted_yield: float, crop: str, msp_price: float = 2300)
     return {"estimated_profit_per_acre": round(profit, 2), "currency": "INR"}
 
 def get_disease_treatment_advice(disease_name: str):
-    """Pesticide and Fertilizer"""
+    """Pesticide and Fertilizer using Groq's LLaMA 3 model"""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-
         prompt = f"""
         An agricultural AI has just diagnosed a crop with the following disease: {disease_name}.
         Provide actionable, simple advice for a farmer to treat this issue.
@@ -85,9 +86,22 @@ def get_disease_treatment_advice(disease_name: str):
         }}
         """
 
-        response = model.generate_content(prompt)
-        clean_text = response.text.replace('```json', '').replace('```', '').strip()
-        return json.loads(clean_text)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+            response_format={"type": "json_object"},
+        )
+        
+        response_text = chat_completion.choices[0].message.content
+        if not response_text:
+            raise ValueError("Empty response from Groq API")
+            
+        return json.loads(response_text)
 
     except Exception as e:
         return {"error": f"Failed to generate treatment advice: {str(e)}"}
