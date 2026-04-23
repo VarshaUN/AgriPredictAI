@@ -19,17 +19,9 @@ build/
 .cache/
 
 # Machine Learning Models & Data
-*.h5
-*.hdf5
-*.pkl
 *.pt
 *.pth
 *.onnx
-# Ignore training datasets (optional, uncomment if needed)
-# *.csv
-# *.dat
-# datasets/
-# data/
 
 # Firebase
 .firebase/
