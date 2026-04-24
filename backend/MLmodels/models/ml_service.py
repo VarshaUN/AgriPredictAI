@@ -5,14 +5,12 @@ import json
 from PIL import Image
 import io
 import os
-from groq import Groq
+import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 import os
 MODEL_DIR = os.path.join(os.path.dirname(__file__))
@@ -70,7 +68,7 @@ def calculate_profit(predicted_yield: float, crop: str, msp_price: float = 2300)
     return {"estimated_profit_per_acre": round(profit, 2), "currency": "INR"}
 
 def get_disease_treatment_advice(disease_name: str):
-    """Pesticide and Fertilizer using Groq's LLaMA 3 model"""
+    """Pesticide and Fertilizer using Gemini model"""
     try:
         prompt = f"""
         An agricultural AI has just diagnosed a crop with the following disease: {disease_name}.
@@ -86,20 +84,17 @@ def get_disease_treatment_advice(disease_name: str):
         }}
         """
 
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model="llama-3.3-70b-versatile",
-            response_format={"type": "json_object"},
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json"
+            )
         )
         
-        response_text = chat_completion.choices[0].message.content
+        response_text = response.text
         if not response_text:
-            raise ValueError("Empty response from Groq API")
+            raise ValueError("Empty response from Gemini API")
             
         return json.loads(response_text)
 
