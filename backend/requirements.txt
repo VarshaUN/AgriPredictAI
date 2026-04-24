@@ -12,7 +12,7 @@ joblib
 numpy
 tensorflow
 Pillow
-groq
+google-generativeai
 scikit-learn
 python-dotenv
 
