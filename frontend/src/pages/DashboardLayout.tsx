@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChatBot } from '../components/ChatBot';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 const Icons = {
