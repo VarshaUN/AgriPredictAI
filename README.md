@@ -115,7 +115,7 @@ We're four people who believe technology should work for those who need it most.
 | **Harsha Mohan** | Frontend Lead | React UI, all pages, responsive design |
 | **Shreyas** | Backend Lead | FastAPI, Supabase integration, auth system |
 | **Jhanvi Rani** | AI/ML Lead | LSTM, CNN, Random Forest models + Gemini integration |
-| **Varsha U N ** | DevOps Lead | GCP deployment, Firebase hosting, Cloud Run, CI pipeline |
+| **Varsha U N** | DevOps Lead | GCP deployment, Firebase hosting, Cloud Run, CI pipeline |
 
 ---
 
