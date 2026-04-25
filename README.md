@@ -2,7 +2,6 @@
 
 **What if every farmer in India had a personal agriculture expert in their pocket?**
 
-That's what we built. In 24 hours.
 
 ---
 
