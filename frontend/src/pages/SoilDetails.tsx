@@ -1,235 +1,152 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { API } from '@/config/api';
-import { toast } from 'sonner';
-import { Beaker, Droplets, FlaskConical, Thermometer, ArrowRight, Leaf, Maximize2 } from 'lucide-react';
+import { apiClient } from '../api';
 
-const SoilDetails = () => {
-  const { updateUser, user } = useAuth();
+export const SoilDetails = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     nitrogen: '',
     phosphorus: '',
     potassium: '',
-    ph: '',
-    land_area_acres: '',
+    ph: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    const n = parseFloat(form.nitrogen);
-    const p = parseFloat(form.phosphorus);
-    const k = parseFloat(form.potassium);
-    const ph = parseFloat(form.ph);
-    const area = parseFloat(form.land_area_acres);
-
-    if (isNaN(n) || isNaN(p) || isNaN(k) || isNaN(ph) || isNaN(area)) {
-      toast.error('Please enter valid numeric values for all fields');
-      setLoading(false);
-      return;
-    }
-
-    if (ph < 0 || ph > 14) {
-      toast.error('pH must be between 0 and 14');
-      setLoading(false);
-      return;
-    }
-
-    if (area <= 0) {
-      toast.error('Farm size must be greater than 0');
-      setLoading(false);
-      return;
-    }
+    setError('');
 
     try {
-      // Call PATCH /auth/profile/soil — requires Bearer token from register/login
-      if (user?.access_token && user.access_token !== 'demo-token-123') {
-        const res = await fetch(API.saveSoil, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${user.access_token}`,
-          },
-          // Backend SoilUpdateRequest: { nitrogen, phosphorus, potassium, ph, land_area_acres }
-          body: JSON.stringify({ nitrogen: n, phosphorus: p, potassium: k, ph, land_area_acres: area }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err?.detail || 'Failed to save soil data');
-        }
-      }
-
-      // Always update local state so the rest of the app has the data
-      updateUser({ soilDetails: { nitrogen: n, phosphorus: p, potassium: k, ph }, land_area_acres: area });
-      toast.success('Soil details saved successfully!');
+      await apiClient.updateSoilProfile({
+        nitrogen: parseFloat(formData.nitrogen),
+        phosphorus: parseFloat(formData.phosphorus),
+        potassium: parseFloat(formData.potassium),
+        ph: parseFloat(formData.ph)
+      });
+      // Redirect to Dashboard after saving soil profile
       navigate('/dashboard');
-    } catch (error: any) {
-      // In demo / offline mode silently fall back to local state only
-      if (user?.access_token === 'demo-token-123') {
-        updateUser({ soilDetails: { nitrogen: n, phosphorus: p, potassium: k, ph }, land_area_acres: area });
-        toast.success('Soil details saved (demo mode)!');
-        navigate('/dashboard');
-      } else {
-        toast.error(error?.message || 'Failed to save soil details');
-      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to sync soil profile. Please try again or skip.');
     } finally {
       setLoading(false);
     }
   };
 
-  const update = (key: string, value: string) => {
-    // Only allow numbers and one decimal point
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setForm(prev => ({ ...prev, [key]: value }));
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
-        <div className="bg-primary p-8 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Leaf size={120} />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 selection:bg-green-200">
+      <div className="max-w-xl w-full bg-white rounded-[24px] p-8 md:p-10 border border-slate-200 shadow-sm relative overflow-hidden">
+        {/* Ambient Decor */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-100/50 rounded-full blur-[40px] translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-green-100/50 rounded-full blur-[40px] -translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
+        
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <p className="text-orange-600 font-bold uppercase tracking-widest text-xs mb-2">{t('auth.step_2')}</p>
+              <h2 className="text-3xl font-bold font-heading text-slate-900 tracking-tight">{t('recommend.soil_profile')}</h2>
+              <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-sm">
+                {t('auth.soil_onboarding_desc')}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-orange-50 flex flex-col items-center justify-center border border-orange-100 mb-6 text-2xl shadow-sm">
+              <span className="-mb-1">🌱</span>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold relative z-10">Soil Profile</h1>
-          <p className="text-primary-foreground/80 mt-2 relative z-10">
-            Help us provide better recommendations by sharing your soil's nutritional levels.
-          </p>
+
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 flex items-start gap-3 rounded-r">
+              <span className="text-red-500 mt-0.5">⚠️</span>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="relative group">
+                <label className="block text-sm font-semibold mb-1 text-slate-700 transition-colors group-focus-within:text-blue-600">{t('fields.nitrogen')}</label>
+                <div className="relative">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">mg/kg</span>
+                  <input 
+                    type="number" step="0.1" required
+                    value={formData.nitrogen}
+                    onChange={(e) => setFormData({...formData, nitrogen: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans font-medium pr-14" 
+                    placeholder="120"
+                  />
+                </div>
+              </div>
+              <div className="relative group">
+                <label className="block text-sm font-semibold mb-1 text-slate-700 transition-colors group-focus-within:text-orange-600">{t('fields.phosphorus')}</label>
+                <div className="relative">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">mg/kg</span>
+                  <input 
+                    type="number" step="0.1" required
+                    value={formData.phosphorus}
+                    onChange={(e) => setFormData({...formData, phosphorus: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-sans font-medium pr-14" 
+                    placeholder="45"
+                  />
+                </div>
+              </div>
+              <div className="relative group">
+                <label className="block text-sm font-semibold mb-1 text-slate-700 transition-colors group-focus-within:text-purple-600">{t('fields.potassium')}</label>
+                <div className="relative">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">mg/kg</span>
+                  <input 
+                    type="number" step="0.1" required
+                    value={formData.potassium}
+                    onChange={(e) => setFormData({...formData, potassium: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-sans font-medium pr-14" 
+                    placeholder="210"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative group max-w-[200px]">
+              <label className="block text-sm font-semibold mb-1 text-slate-700 transition-colors group-focus-within:text-yellow-600">Soil pH Level</label>
+              <div className="relative">
+                <input 
+                  type="number" step="0.1" required
+                  value={formData.ph}
+                  onChange={(e) => setFormData({...formData, ph: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 transition-all font-medium" 
+                  placeholder="6.5"
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 flex flex-col sm:flex-row items-center gap-4 border-t border-slate-100">
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full sm:w-auto flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-[0_4px_12px_rgba(22,163,74,0.2)] hover:shadow-[0_8px_24px_rgba(22,163,74,0.3)] transition-all flex justify-center items-center gap-2"
+              >
+                {loading ? (
+                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                ) : (
+                  `${t('auth.sync_profile')} →`
+                )}
+              </button>
+              
+              <button 
+                type="button" 
+                onClick={() => navigate('/dashboard')}
+                className="w-full sm:w-auto px-6 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                {t('common.skip_for_now')}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Nitrogen */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-                  <Droplets size={16} />
-                </div>
-                Nitrogen (N)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. 45"
-                  value={form.nitrogen}
-                  onChange={(e) => update('nitrogen', e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 focus:ring-2 focus:ring-primary transition-all"
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">mg/kg</span>
-              </div>
-            </div>
-
-            {/* Phosphorus */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg">
-                  <Beaker size={16} />
-                </div>
-                Phosphorus (P)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. 30"
-                  value={form.phosphorus}
-                  onChange={(e) => update('phosphorus', e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 focus:ring-2 focus:ring-primary transition-all"
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">mg/kg</span>
-              </div>
-            </div>
-
-            {/* Potassium */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
-                  <FlaskConical size={16} />
-                </div>
-                Potassium (K)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. 25"
-                  value={form.potassium}
-                  onChange={(e) => update('potassium', e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 focus:ring-2 focus:ring-primary transition-all"
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">mg/kg</span>
-              </div>
-            </div>
-
-            {/* pH */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg">
-                  <Thermometer size={16} />
-                </div>
-                Soil pH
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. 6.5"
-                  value={form.ph}
-                  onChange={(e) => update('ph', e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 focus:ring-2 focus:ring-primary transition-all"
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">0 - 14</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Farm Size */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <div className="p-1.5 bg-green-50 text-green-600 rounded-lg">
-                <Maximize2 size={16} />
-              </div>
-              Farm Size
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="e.g. 2.5"
-                value={form.land_area_acres}
-                onChange={(e) => update('land_area_acres', e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 focus:ring-2 focus:ring-primary transition-all"
-              />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">acres</span>
-            </div>
-          </div>
-
-          <div className="pt-4 flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="text-slate-500 hover:text-slate-700 font-medium transition-colors"
-            >
-              Skip for now
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-70 group"
-            >
-              {loading ? 'Saving...' : 'Complete Profile'}
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </form>
       </div>
       
-      <p className="mt-8 text-slate-400 text-sm text-center max-w-md">
-        Note: You can find these details on your official soil health card. 
-        Accuracy helps our AI provide more precise crop recommendations.
-      </p>
+      <p className="text-sm font-semibold text-slate-400 mt-8">AgriPredict AI • Secure Profile Generation</p>
     </div>
   );
 };
-
-export default SoilDetails;

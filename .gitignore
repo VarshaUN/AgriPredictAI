@@ -10,12 +10,18 @@ __pycache__/
 venv/
 .venv/
 *.egg-info/
+.pytest_cache/
 
 # Node / React
 node_modules/
 dist/
 build/
 .cache/
+
+# Machine Learning Models & Data
+*.pt
+*.pth
+*.onnx
 
 # Firebase
 .firebase/

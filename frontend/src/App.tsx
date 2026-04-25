@@ -1,49 +1,44 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/context/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import SoilDetails from "./pages/SoilDetails";
-import PredictYield from "./pages/PredictYield";
-import Profile from "./pages/Profile";
-import DiseaseDetection from "./pages/DiseaseDetection";
-import Dashboard from "./pages/Dashboard";
-import Blogs from "./pages/Blogs";
-import RecommendCrop from "./pages/RecommendCrop";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './i18n';
+import Frontend from './Frontend';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { DashboardLayout } from './pages/DashboardLayout';
+import { PredictYield } from './pages/PredictYield';
+import { DiseaseDetection } from './pages/DiseaseDetection';
+import { CropRecommend } from './pages/CropRecommend';
+import { SoilDetails } from './pages/SoilDetails';
+import { Profile } from './pages/Profile';
+import { DashboardOverview } from './pages/DashboardOverview';
+import { SuccessStories } from './pages/SuccessStories';
+import { GreenShiftMarket } from './pages/GreenShiftMarket';
+import { ChatBot } from './components/ChatBot';
 
-import Chatbot from "@/components/Chatbot";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Sonner position="top-right" />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/soil-details" element={<ProtectedRoute><SoilDetails /></ProtectedRoute>} />
-            <Route path="/predict" element={<ProtectedRoute><PredictYield /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
-            <Route path="/recommend" element={<ProtectedRoute><RecommendCrop /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/blogs" element={<Blogs />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Chatbot />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Frontend />} />
+        <Route path="/success-stories" element={<SuccessStories />} />
+        <Route path="/market" element={<GreenShiftMarket />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/soil-details" element={<SoilDetails />} />
+        
+        {/* Dashboard Shell via Layout */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardOverview />} />
+          <Route path="/predict" element={<PredictYield />} />
+          <Route path="/disease" element={<DiseaseDetection />} />
+          <Route path="/recommend" element={<CropRecommend />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+      </Routes>
+      <ChatBot />
+    </Router>
+  )
+}
 
 export default App;
